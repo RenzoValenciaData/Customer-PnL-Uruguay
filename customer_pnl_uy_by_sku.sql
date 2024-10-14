@@ -9,7 +9,6 @@ DECLARE Param_sku STRING DEFAULT '001';
 
 CREATE OR REPLACE TABLE `dev-amer-analyt-actuals-svc-7a.amer_p_la_fin_data_hub.t_fct_customer_pnl_uy_sku`  AS (
 
-
   /*===== DATA DE COPA BY SKU =========*/
 WITH TOTAL_LA_COPA_DATA_BY_SKU AS (
     SELECT
@@ -998,10 +997,10 @@ WITH TOTAL_LA_COPA_DATA_BY_SKU AS (
               WHEN CUENTA='VOLUME' THEN 'Volume'
         END ACCOUNT_LVL_3
         ,0 Value_AC_Rate
-        ,0 Value_PY_Rate
-        ,Value_USD
-        ,Value_LCL
-  FROM UNION_PLANING --WHERE SKU  NOT LIKE '%D_%'
+        ,0 Value_PY_Rate    
+        ,CASE WHEN CUENTA='G2N' THEN Value_LCL *-1 ELSE Value_LCL END Value_LCL
+        ,CASE WHEN CUENTA='G2N' THEN Value_USD *-1 ELSE Value_USD END Value_USD
+  FROM UNION_PLANING 
 )
 
 
@@ -1015,4 +1014,5 @@ WITH TOTAL_LA_COPA_DATA_BY_SKU AS (
 
 
 SELECT * FROM UNION_PLANNING_OUT_FINAL
+
 )
