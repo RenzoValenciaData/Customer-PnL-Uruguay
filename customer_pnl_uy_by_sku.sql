@@ -8,7 +8,7 @@ DECLARE Param_sku STRING DEFAULT '001';
 
 
 CREATE OR REPLACE TABLE `dev-amer-analyt-actuals-svc-7a.amer_p_la_fin_data_hub.t_fct_customer_pnl_uy_sku`  AS (
-
+ 
   /*===== DATA DE COPA BY SKU =========*/
 WITH TOTAL_LA_COPA_DATA_BY_SKU AS (
     SELECT
@@ -884,24 +884,6 @@ WITH TOTAL_LA_COPA_DATA_BY_SKU AS (
 )
 
 ,FIT_PLANNING_REVENUE AS (
-  SELECT  
-      SKU
-      ,Channel
-      ,CATEGORY
-      ,DATE
-      ,SCENARIO
-      ,FORMAT_FLAVOR
-      ,SUBBRAND
-      ,BRAND
-      ,Area
-      ,Cluster
-      ,Market
-   --   ,'' account
-      ,CUENTA
-      ,SUM(Value_USD) Value_USD  
-      ,SUM(Value_LCL) Value_LCL
-  FROM
-  (
     SELECT 
       SKU
       ,Channel
@@ -914,37 +896,105 @@ WITH TOTAL_LA_COPA_DATA_BY_SKU AS (
       ,Area
       ,Cluster
       ,Market
-     --,account
-      ,'NET_REVENUE' CUENTA
-      ,0 Value_AC_Rate
-      ,0 Value_PY_Rate
-      ,0 Value_USD
-      ,SUM(CASE WHEN CUENTA = 'GROSS_SALES' THEN VALUE_LCL ELSE 0 END) - SUM(CASE WHEN CUENTA = 'G2N' THEN VALUE_LCL ELSE 0 END) AS Value_LCL  
-    FROM FIT_PLANNING A
+      ,CUENTA
+      ,SUM(Value_LCL) Value_LCL
+      ,SUM(Value_USD) Value_USD
+  FROM
+  (
+    SELECT 
+        SKU
+        ,Channel
+        ,CATEGORY
+        ,DATE
+        ,SCENARIO
+        ,FORMAT_FLAVOR
+        ,SUBBRAND
+        ,BRAND
+        ,Area
+        ,Cluster
+        ,Market
+        ,CUENTA
+        ,SUM(Value_USD) Value_USD
+        ,0 Value_LCL
+    FROM
+    (
+      SELECT  
+        SKU
+        ,Channel
+        ,CATEGORY
+        ,DATE
+        ,SCENARIO
+        ,FORMAT_FLAVOR
+        ,SUBBRAND
+        ,BRAND
+        ,Area
+        ,Cluster
+        ,Market
+        ,SUM(GROSS_SALES)-SUM(G2N) *-1 NET_REVENUE  
+        ,SUM(COGS_MANUFACTURING) COGS_MANUFACTURING
+        ,SUM(COGS_LOGISTIC) COGS_LOGISTIC
+        ,SUM(GROSS_SALES) GROSS_SALES
+        ,SUM(G2N) G2N
+        ,SUM(GROSS_PROFIT) GROSS_PROFIT
+        ,SUM(VOLUME) VOLUME
+
+      FROM
+      (
+        SELECT * FROM FIT_PLANNING)
+        PIVOT( SUM(Value_USD) FOR CUENTA IN('COGS_MANUFACTURING','COGS_LOGISTIC','GROSS_SALES','G2N','GROSS_PROFIT','VOLUME'))
+      GROUP BY 1,2,3,4,5,6,7,8,9,10,11
+    )
+    UNPIVOT(Value_USD FOR CUENTA IN(COGS_MANUFACTURING,COGS_LOGISTIC,GROSS_SALES,G2N,GROSS_PROFIT,VOLUME,NET_REVENUE))
     GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12
     UNION ALL
-    SELECT
-      SKU
-      ,Channel
-      ,CATEGORY
-      ,DATE
-      ,SCENARIO
-      ,FORMAT_FLAVOR
-      ,SUBBRAND
-      ,BRAND
-      ,Area
-      ,Cluster
-      ,Market
-     -- ,account
-      ,'NET_REVENUE' CUENTA
-      ,0 Value_AC_Rate
-      ,0 Value_PY_Rate
-      ,SUM(CASE WHEN CUENTA = 'GROSS_SALES' THEN VALUE_USD ELSE 0 END) - SUM(CASE WHEN CUENTA = 'G2N' THEN VALUE_USD ELSE 0 END) AS Value_USD  
-      ,0 Value_LCL  
-    FROM FIT_PLANNING A
+    SELECT 
+        SKU
+        ,Channel
+        ,CATEGORY
+        ,DATE
+        ,SCENARIO
+        ,FORMAT_FLAVOR
+        ,SUBBRAND
+        ,BRAND
+        ,Area
+        ,Cluster
+        ,Market
+        ,CUENTA
+        ,0 Values_USD
+        ,SUM(Value_LCL) Value_LCL
+    FROM
+    (
+      SELECT  
+        SKU
+        ,Channel
+        ,CATEGORY
+        ,DATE
+        ,SCENARIO
+        ,FORMAT_FLAVOR
+        ,SUBBRAND
+        ,BRAND
+        ,Area
+        ,Cluster
+        ,Market
+        ,SUM(GROSS_SALES)-SUM(G2N) *-1 NET_REVENUE  
+        ,SUM(COGS_MANUFACTURING) COGS_MANUFACTURING
+        ,SUM(COGS_LOGISTIC) COGS_LOGISTIC
+        ,SUM(GROSS_SALES) GROSS_SALES
+        ,SUM(G2N) G2N
+        ,SUM(GROSS_PROFIT) GROSS_PROFIT
+        ,SUM(VOLUME) VOLUME
+        
+      FROM
+      (
+        SELECT * FROM FIT_PLANNING)
+        PIVOT( SUM(Value_LCL) FOR CUENTA IN('COGS_MANUFACTURING','COGS_LOGISTIC','GROSS_SALES','G2N','GROSS_PROFIT','VOLUME'))
+      GROUP BY 1,2,3,4,5,6,7,8,9,10,11
+    )
+    UNPIVOT(Value_LCL FOR CUENTA IN(COGS_MANUFACTURING,COGS_LOGISTIC,GROSS_SALES,G2N,GROSS_PROFIT,VOLUME,NET_REVENUE))
     GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12
   )
-  GROUP BY SKU,Channel,CATEGORY,DATE,SCENARIO,FORMAT_FLAVOR,SUBBRAND,BRAND,Area,Cluster,Market,CUENTA
+  WHERE CUENTA='NET_REVENUE'
+  GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12
 )
 
 
@@ -998,18 +1048,17 @@ WITH TOTAL_LA_COPA_DATA_BY_SKU AS (
         END ACCOUNT_LVL_3
         ,0 Value_AC_Rate
         ,0 Value_PY_Rate    
-        ,CASE WHEN CUENTA='G2N' THEN Value_LCL *-1 ELSE Value_LCL END Value_LCL
         ,CASE WHEN CUENTA='G2N' THEN Value_USD *-1 ELSE Value_USD END Value_USD
+        ,CASE WHEN CUENTA='G2N' THEN Value_LCL *-1 ELSE Value_LCL END Value_LCL        
   FROM UNION_PLANING 
 )
 
 
 ,UNION_PLANNING_OUT_FINAL AS (
-  SELECT * FROM
-  (  SELECT * FROM OUTPUT_FINAL
+    SELECT * FROM OUTPUT_FINAL
     UNION ALL
-    SELECT * FROM PLANING_FINAL)
-  ORDER BY 1,8,16,17,18
+    SELECT * FROM PLANING_FINAL
+
 )
 
 
