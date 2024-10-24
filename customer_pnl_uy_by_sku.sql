@@ -1,5 +1,5 @@
 DECLARE Periodo_ini DATE DEFAULT '2023-01-01';
-DECLARE Periodo_fin DATE DEFAULT '2024-12-31';
+DECLARE Periodo_fin DATE DEFAULT '2024-09-30';
 DECLARE Periodo_ini_fit DATE DEFAULT '2023-01-01';
 DECLARE Company_code STRING DEFAULT 'UY02';
 DECLARE Fit_entity STRING DEFAULT 'UYLFS';
@@ -9,7 +9,7 @@ DECLARE Param_sku STRING DEFAULT '001';
 
 CREATE OR REPLACE TABLE `dev-amer-analyt-actuals-svc-7a.amer_p_la_fin_data_hub.t_fct_customer_pnl_uy_sku`  AS (
  
-  /*===== DATA DE COPA BY SKU =========*/
+/*===== DATA DE COPA BY SKU =========*/
 WITH TOTAL_LA_COPA_DATA_BY_SKU AS (
     SELECT
       fiscper
